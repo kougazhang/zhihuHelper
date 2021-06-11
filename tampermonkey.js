@@ -34,6 +34,9 @@ GM_addStyle(".Profile-mainColumn {width: 1000px; }");
 // 隐藏活动图片
 GM_addStyle(".css-1mcaze2 {display: none; }");
 
+// 隐藏推荐页广告
+GM_addStyle(".TopstoryItem--advertCard {display: none; }");
+
 
 (function () {
   'use strict';
