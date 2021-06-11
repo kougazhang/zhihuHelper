@@ -31,6 +31,9 @@ GM_addStyle(".Profile-sideColumn {display: none; }");
 // 加宽
 GM_addStyle(".Profile-mainColumn {width: 1000px; }");
 
+// 隐藏活动图片
+GM_addStyle(".css-1mcaze2 {display: none; }");
+
 
 (function () {
   'use strict';
