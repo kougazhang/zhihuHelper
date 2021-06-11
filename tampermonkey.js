@@ -103,7 +103,7 @@ function directLink() {
   }
 }
 
-// 转载
+// 问题页（https://www.zhihu.com/question/xxxx）：转载、拉黑作者
 function reprint() {
   const color = [
     {name: 'blue', value: '#0084ff'},
@@ -121,6 +121,18 @@ function reprint() {
     if (document.getElementById(answerID)) {
       continue;
     }
+
+    const answerItem = item.getElementsByClassName('AnswerItem')[0];
+    let dataZop = JSON.parse(answerItem.getAttribute("data-zop"));
+    let userBlacklist = GM_getValue("menu_customBlockUsers").split("|");
+    for (let user of userBlacklist){
+      console.log(user, dataZop.authorName);
+      if (user === dataZop.authorName) {
+        item.style = "display:none";
+        break;
+      }
+    }
+
     const text = eleMeta.parentElement.getElementsByClassName("RichContent")[0].innerText;
     const reprintBtn = createEle('button',
       '一键转载',
@@ -133,13 +145,30 @@ function reprint() {
       updateClipboard(text)
     });
     eleMeta.append(reprintBtn);
+
+    const blacklist = createEle('button',
+      `拉黑 ${dataZop.authorName}`,
+      {
+        id: answerID,
+        style: `background:${color[(num+1) % color.length].value}; ${btnStyle}; margin-left:0`
+      });
+    blacklist.addEventListener('click', () => {
+      let ok = confirm("拉黑该作者后，将屏蔽该作者在所有问题下的回答。【注：可通过自定义屏蔽用户将用户移除黑名单】");
+      if (ok) {
+        let users = GM_getValue("menu_customBlockUsers");
+        GM_setValue("menu_customBlockUsers", users.concat("|", dataZop.authorName));
+        item.style = "display:none";
+      } else {
+        console.log("取消拉黑");
+      }
+    });
+    eleMeta.append(blacklist);
     num++;
   }
 }
 
 
-// 屏蔽问题关键字
-function blockByTitleKeyword() {
+function blockAnswerItem() {
   let block = e => {
     if (e.target.innerHTML && e.target.getElementsByClassName('AnswerItem').length > 0) {
       let item = e.target.getElementsByClassName('AnswerItem')[0];
@@ -154,6 +183,15 @@ function blockByTitleKeyword() {
             }
           })
         }
+        let users = GM_getValue("menu_customBlockUsers");
+        if (users) {
+          users.split("|").forEach(user => {
+            if (parsed && parsed.authorName && parsed.authorName.includes(user)) {
+              item.parentNode.remove();
+              console.log("已屏蔽", parsed.authorName);
+            }
+          })
+        }
       }
     }
   };
@@ -165,6 +203,14 @@ GM_registerMenuCommand("自定义屏蔽标题关键词", function () {
   keywords = prompt("编辑 [自定义屏蔽标题关键词]\n（不同关键字之间使用 \"|\" 分隔，例如：关键字A|关键字B|关键字C ）", keywords);
   if (keywords) {
     GM_setValue("menu_customBlockKeywords", keywords);
+  }
+});
+
+GM_registerMenuCommand("自定义屏蔽用户", function () {
+  let keywords = GM_getValue('menu_customBlockUsers');
+  keywords = prompt("编辑 [自定义屏蔽用户]\n（不同关键字之间使用 \"|\" 分隔，例如：用户A|用户B|用户C ）", keywords);
+  if (keywords) {
+    GM_setValue("menu_customBlockUsers", keywords);
   }
 });
 
@@ -198,7 +244,7 @@ GM_registerMenuCommand("自定义屏蔽标题关键词", function () {
   // 站外链接直接跳转
   setInterval(directLink, 100);
 
-  // 按 关注/推荐 页中标题的关键字进行屏蔽
-  blockByTitleKeyword();
+  // 屏蔽含关键字的问题, 屏蔽某用户答案
+  blockAnswerItem();
 
 })();
