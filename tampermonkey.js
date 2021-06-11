@@ -7,6 +7,13 @@
 // @match        https://www.zhihu.com/*
 // @grant        GM_addStyle
 // @grant        GM_log
+// @grant        GM_registerMenuCommand
+// @grant        GM_unregisterMenuCommand
+// @grant        GM_openInTab
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_notification
+// @run-at       document-end
 // ==/UserScript==
 
 // 问题页加宽
@@ -31,20 +38,73 @@ GM_addStyle(".Profile-sideColumn {display: none; }");
 // 加宽
 GM_addStyle(".Profile-mainColumn {width: 1000px; }");
 
-// 隐藏活动图片
 GM_addStyle(".css-1mcaze2 {display: none; }");
 
-// 隐藏推荐页广告
+// 隐藏推荐页中的广告
 GM_addStyle(".TopstoryItem--advertCard {display: none; }");
 
 
-(function () {
-  'use strict';
-  // Your code here...
+// 创建元素
+function createEle(eleName, text, attrs) {
+  let ele = document.createElement(eleName);
+  ele.innerText = text;
+  for (let k in attrs) {
+    ele.setAttribute(k, attrs[k]);
+  }
+  return ele;
+}
 
-  const urlZhiHuFeed = "https://www.zhihu.com/";
-  const reUrlZhiHuQuestion = /https:\/\/www.zhihu.com\/question\/.*/;
-  const reUrlZhiHuFollow = /https:\/\/www.zhihu.com\/follow.*/;
+// 防抖
+function debounce(fn, wait) {
+  let timeout = null;
+  return function () {
+    if (timeout !== null) clearTimeout(timeout);
+    timeout = setTimeout(fn, wait);
+  }
+}
+
+
+// 复制剪贴板
+function updateClipboard(newClip) {
+  navigator.clipboard.writeText(newClip).then(function () {
+    alert('succeed copy');
+  }, function (err) {
+    // clipboard write failed
+    console.info('failed copy', err);
+    alert('faild copy')
+  });
+}
+
+
+// 站外链接直接跳转
+function directLink() {
+  let link, equal, colon, externalHref, protocol, path, newHref;
+  // 文字链接
+  link = document.querySelectorAll('a[class*="external"]')
+  if (link) {
+    link.forEach(function (_this) {
+      if (_this.getElementsByTagName('span').length > 0) {
+        newHref = _this.innerText;
+        _this.setAttribute('href', newHref);
+      } else if (_this.href.indexOf("link.zhihu.com/?target=") > -1) {
+        externalHref = _this.href;
+        newHref = externalHref.substring(externalHref = _this.href.indexOf("link.zhihu.com/?target=") + "link.zhihu.com/?target=".length);
+        _this.setAttribute('href', decodeURIComponent(newHref));
+      } else {
+        externalHref = _this.href;
+        if (externalHref.lastIndexOf("https%3A")) {
+          newHref = _this.href.substring(_this.href.lastIndexOf("https%3A"));
+        } else if (externalHref.lastIndexOf("http%3A%2F%2F")) {
+          newHref = _this.href.substring(_this.href.lastIndexOf("http%3A"));
+        }
+        _this.setAttribute('href', decodeURIComponent(newHref));
+      }
+    });
+  }
+}
+
+// 转载
+function reprint() {
   const color = [
     {name: 'blue', value: '#0084ff'},
     {name: 'green', value: '#5cb85c'},
@@ -54,94 +114,91 @@ GM_addStyle(".TopstoryItem--advertCard {display: none; }");
   ];
   const btnStyle = 'margin-top: 15px; margin-bottom: 15px; margin-left:-18px; cursor:pointer; color: #fff; border-radius: 3px; border: 1px solid; padding: 3px 6px';
 
-  // 复制剪贴板
-  function updateClipboard(newClip) {
-    navigator.clipboard.writeText(newClip).then(function () {
-      alert('succeed copy');
-    }, function (err) {
-      // clipboard write failed
-      console.info('failed copy', err);
-      alert('faild copy')
-    });
-  }
-
-  // 防抖
-  function debounce(fn, wait) {
-    let timeout = null;
-    return function () {
-      if (timeout !== null) clearTimeout(timeout);
-      timeout = setTimeout(fn, wait);
+  let num = 0;
+  for (let item of document.querySelectorAll('div[class="List-item"]')) {
+    const eleMeta = item.getElementsByClassName('ContentItem-meta')[0];
+    const answerID = item.getElementsByTagName('div')[0].getAttribute('name');
+    if (document.getElementById(answerID)) {
+      continue;
     }
-  }
-
-  // 创建元素
-  function createEle(eleName, text, attrs) {
-    let ele = document.createElement(eleName);
-    ele.innerText = text;
-    for (let k in attrs) {
-      ele.setAttribute(k, attrs[k]);
-    }
-    return ele;
-  }
-
-  function block(item) {
-    const move = (x) => {
-      x.style.display = "none";
-    };
-
-    if (item === undefined) {
-      return undefined;
-    } else if (item instanceof window.NodeList) {
-      item.forEach(i => block(i));
-    } else {
-      move(item);
-    }
-  }
-
-  function addReprintBtn() {
-    let num = 0;
-    for (let item of document.querySelectorAll('div[class="List-item"]')) {
-      const eleMeta = item.getElementsByClassName('ContentItem-meta')[0];
-      const answerID = item.getElementsByTagName('div')[0].getAttribute('name');
-      if (document.getElementById(answerID)) {
-        continue;
-      }
-      const text = eleMeta.parentElement.getElementsByClassName("RichContent")[0].innerText;
-      const reprintBtn = createEle('button',
-        '一键转载',
-        {
-          id: answerID,
-          style: `background:${color[num % color.length].value}; ${btnStyle}; margin-left:0`
-        });
-      // reprintBtn.setAttribute('value', text);
-      reprintBtn.addEventListener('click', () => {
-        updateClipboard(text)
+    const text = eleMeta.parentElement.getElementsByClassName("RichContent")[0].innerText;
+    const reprintBtn = createEle('button',
+      '一键转载',
+      {
+        id: answerID,
+        style: `background:${color[num % color.length].value}; ${btnStyle}; margin-left:0`
       });
-      eleMeta.append(reprintBtn);
-      num++;
-    }
+    // reprintBtn.setAttribute('value', text);
+    reprintBtn.addEventListener('click', () => {
+      updateClipboard(text)
+    });
+    eleMeta.append(reprintBtn);
+    num++;
   }
+}
+
+
+// 屏蔽问题关键字
+function blockByTitleKeyword() {
+  let block = e => {
+    if (e.target.innerHTML && e.target.getElementsByClassName('AnswerItem').length > 0) {
+      let item = e.target.getElementsByClassName('AnswerItem')[0];
+      if (item) {
+        let dataZop = item.getAttribute("data-zop");
+        let parsed = JSON.parse(dataZop);
+        let keywords = GM_getValue("menu_customBlockKeywords");
+        if (keywords) {
+          keywords.split("|").forEach(keyword => {
+            if (parsed && parsed.title && parsed.title.includes(keyword)) {
+              item.parentNode.remove();
+            }
+          })
+        }
+      }
+    }
+  };
+  document.addEventListener('DOMNodeInserted', block); // 监听插入事件
+}
+
+GM_registerMenuCommand("自定义屏蔽标题关键词", function () {
+  let keywords = GM_getValue('menu_customBlockKeywords');
+  keywords = prompt("编辑 [自定义屏蔽标题关键词]\n（不同关键字之间使用 \"|\" 分隔，例如：关键字A|关键字B|关键字C ）", keywords);
+  if (keywords) {
+    GM_setValue("menu_customBlockKeywords", keywords);
+  }
+});
+
+(function () {
+  'use strict';
+  // Your code here...
+
+  const urlZhiHuFeed = "https://www.zhihu.com/";
+  const urlZhihuFollow = "https://www.zhihu.com/follow";
+  const reUrlZhiHuQuestion = /https:\/\/www.zhihu.com\/question\/.*/;
+
 
   window.onload = (e) => {
     if (location.href === urlZhiHuFeed) {
       // 重定向首页到关注页面
       document.querySelector('a[href="/follow"]').click();
     }
+    if (location.href === urlZhiHuFeed || urlZhihuFollow) {
+      // 清除搜索框中的问题推荐
+      document.querySelector("input#Popover1-toggle.Input").placeholder = "输入问题";
+    }
   };
 
-  // follow 页去广告
-  setInterval(() => {
-    if (reUrlZhiHuFollow.test(location.href)) {
-      block(document.querySelectorAll('div[class~="TopstoryItem--advertCard"]'));
-    }
-  }, 200);
-
   window.addEventListener('scroll', debounce(() => {
-    // 问题页增加转载按钮
     if (reUrlZhiHuQuestion.test(location.href)) {
-      addReprintBtn();
+      // 问题页增加转载按钮
+      reprint();
     }
-
   }, 100));
+
+  // 站外链接直接跳转
+  setInterval(directLink, 100);
+
+  // 按 关注/推荐 页中标题的关键字进行屏蔽
+  blockByTitleKeyword();
 
 })();
