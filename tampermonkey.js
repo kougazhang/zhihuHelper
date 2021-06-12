@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name   知乎浏览助手
 // @namespace    http://tampermonkey.net/
-// @version      0.0.4
+// @version      0.0.5
 // @description 知乎浏览助手. 如果想报 bug, 可以通过知乎私信联系我, zhihu.com/people/kougazhang
 // @author        kgzhang
 // @match        https://www.zhihu.com/*
@@ -125,7 +125,7 @@ function reprint() {
     const answerItem = item.getElementsByClassName('AnswerItem')[0];
     let dataZop = JSON.parse(answerItem.getAttribute("data-zop"));
     let userBlacklist = GM_getValue("menu_customBlockUsers").split("|");
-    for (let user of userBlacklist){
+    for (let user of userBlacklist) {
       console.log(user, dataZop.authorName);
       if (user === dataZop.authorName) {
         item.style = "display:none";
@@ -150,7 +150,7 @@ function reprint() {
       `拉黑 ${dataZop.authorName}`,
       {
         id: answerID,
-        style: `background:${color[(num+1) % color.length].value}; ${btnStyle}; margin-left:0`
+        style: `background:${color[(num + 1) % color.length].value}; ${btnStyle}; margin-left:0`
       });
     blacklist.addEventListener('click', () => {
       let ok = confirm("拉黑该作者后，将屏蔽该作者在所有问题下的回答。【注：可通过自定义屏蔽用户将用户移除黑名单】");
