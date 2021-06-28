@@ -37,6 +37,7 @@ GM_addStyle(".SearchSideBar {display: none;}");
 GM_addStyle(".Profile-sideColumn {display: none; }");
 // 加宽
 GM_addStyle(".Profile-mainColumn {width: 1000px; }");
+GM_addStyle(".QuestionWaiting-mainColumn {width: 1000px; }");
 
 GM_addStyle(".css-1mcaze2 {display: none; }");
 
