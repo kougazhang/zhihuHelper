@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name   知乎浏览助手
 // @namespace    http://tampermonkey.net/
-// @version      0.0.5
+// @version      0.0.6
 // @description 知乎浏览助手. 如果想报 bug, 可以通过知乎私信联系我, zhihu.com/people/kougazhang
 // @author        kgzhang
 // @match        https://www.zhihu.com/*
@@ -43,6 +43,8 @@ GM_addStyle(".css-1mcaze2 {display: none; }");
 // 隐藏推荐页中的广告
 GM_addStyle(".TopstoryItem--advertCard {display: none; }");
 
+// 当前页面的 URL
+const currentURL = href = new URL(window.location.href);
 
 // 创建元素
 function createEle(eleName, text, attrs) {
@@ -167,52 +169,72 @@ function reprint() {
   }
 }
 
-
-function blockAnswerItem() {
+function blockFeedItem() {
   let block = e => {
-    if (e.target.innerHTML && e.target.getElementsByClassName('AnswerItem').length > 0) {
-      let item = e.target.getElementsByClassName('AnswerItem')[0];
-      if (item) {
-        let dataZop = item.getAttribute("data-zop");
-        let parsed = JSON.parse(dataZop);
-        let keywords = GM_getValue("menu_customBlockKeywords");
-        if (keywords) {
-          keywords.split("|").forEach(keyword => {
-            if (parsed && parsed.title && parsed.title.includes(keyword)) {
-              item.parentNode.remove();
+    if (e.target.innerHTML) {
+      if (e.target.getElementsByClassName('AnswerItem').length > 0) {
+        let item = e.target.getElementsByClassName('AnswerItem')[0]
+        if (item) {
+          let dataZop = item.getAttribute("data-zop")
+          let parsed = JSON.parse(dataZop)
+          let keywords = GM_getValue("menu_customBlockKeywords")
+          if (keywords) {
+            for (let keyword of keywords.split("|")) {
+              if (parsed && parsed.title && parsed.title.includes(keyword)) {
+                item.parentNode.remove()
+                console.log("根据关键词", keyword, "已屏蔽回答", parsed.title)
+                break
+              }
             }
-          })
+          }
+          let users = GM_getValue("menu_customBlockUsers")
+          if (users) {
+            for (let user of users.split("|")) {
+              if (parsed && parsed.authorName && parsed.authorName === user) {
+                item.parentNode.remove()
+                console.log("根据用户", user, "已屏蔽用户", parsed.authorName)
+                break
+              }
+            }
+          }
         }
-        let users = GM_getValue("menu_customBlockUsers");
-        if (users) {
-          users.split("|").forEach(user => {
-            if (parsed && parsed.authorName && parsed.authorName.includes(user)) {
-              item.parentNode.remove();
-              console.log("已屏蔽", parsed.authorName);
+        // else if https://www.zhihu.com/question/waiting 页屏蔽问题
+      } else if (currentURL.pathname === "/question/waiting" && e.target.getElementsByClassName('ContentItem').length > 0) {
+        let item = e.target.getElementsByClassName('QuestionItem-title')[0]
+        if (item) {
+          let title = item.innerText
+          if (title) {
+            let keywords = GM_getValue("menu_customBlockQuestionKeywords")
+            if (keywords) {
+              for (let keyword of keywords.split("|")) {
+                if (title.includes(keyword)) {
+                  item.parentNode.remove()
+                  console.log("根据关键词", keyword, "已屏蔽等你来答问题", title)
+                  break
+                }
+              }
             }
-          })
+          }
         }
       }
     }
-  };
-  document.addEventListener('DOMNodeInserted', block); // 监听插入事件
+  }
+  document.addEventListener('DOMNodeInserted', block) // 监听插入事件
 }
 
-GM_registerMenuCommand("自定义屏蔽标题关键词", function () {
-  let keywords = GM_getValue('menu_customBlockKeywords');
-  keywords = prompt("编辑 [自定义屏蔽标题关键词]\n（不同关键字之间使用 \"|\" 分隔，例如：关键字A|关键字B|关键字C ）", keywords);
-  if (keywords) {
-    GM_setValue("menu_customBlockKeywords", keywords);
-  }
-});
+function registerMenuCommand(title, gmKey, promptInfo) {
+  GM_registerMenuCommand(title, function () {
+    let keywords = GM_getValue(gmKey);
+    keywords = prompt(promptInfo, keywords);
+    if (keywords) {
+      GM_setValue(gmKey, keywords);
+    }
+  });
+}
 
-GM_registerMenuCommand("自定义屏蔽用户", function () {
-  let keywords = GM_getValue('menu_customBlockUsers');
-  keywords = prompt("编辑 [自定义屏蔽用户]\n（不同关键字之间使用 \"|\" 分隔，例如：用户A|用户B|用户C ）", keywords);
-  if (keywords) {
-    GM_setValue("menu_customBlockUsers", keywords);
-  }
-});
+registerMenuCommand("自定义屏蔽标题关键词", 'menu_customBlockKeywords', "编辑 [自定义屏蔽标题关键词]\n（不同关键字之间使用 \"|\" 分隔，例如：关键字A|关键字B|关键字C ）")
+registerMenuCommand("自定义屏蔽用户", 'menu_customBlockUsers', "编辑 [自定义屏蔽用户]\n（不同关键字之间使用 \"|\" 分隔，例如：用户A|用户B|用户C ）");
+registerMenuCommand("自定义屏蔽等你来答", 'menu_customBlockQuestionKeywords', "编辑 [自定义屏蔽问题]\n（不同关键字之间使用 \"|\" 分隔，例如：问题A|问题B|问题C ）");
 
 (function () {
   'use strict';
@@ -245,6 +267,6 @@ GM_registerMenuCommand("自定义屏蔽用户", function () {
   setInterval(directLink, 100);
 
   // 屏蔽含关键字的问题, 屏蔽某用户答案
-  blockAnswerItem();
+  blockFeedItem();
 
 })();
