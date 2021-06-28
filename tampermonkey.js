@@ -43,8 +43,6 @@ GM_addStyle(".css-1mcaze2 {display: none; }");
 // 隐藏推荐页中的广告
 GM_addStyle(".TopstoryItem--advertCard {display: none; }");
 
-// 当前页面的 URL
-const currentURL = href = new URL(window.location.href);
 
 // 创建元素
 function createEle(eleName, text, attrs) {
@@ -199,7 +197,7 @@ function blockFeedItem() {
           }
         }
         // else if https://www.zhihu.com/question/waiting 页屏蔽问题
-      } else if (currentURL.pathname === "/question/waiting" && e.target.getElementsByClassName('ContentItem').length > 0) {
+      } else if (window.location.pathname === "/question/waiting" && e.target.getElementsByClassName('ContentItem').length > 0) {
         let item = e.target.getElementsByClassName('QuestionItem-title')[0]
         if (item) {
           let title = item.innerText
