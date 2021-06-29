@@ -207,7 +207,7 @@ function blockFeedItem() {
             if (keywords) {
               for (let keyword of keywords.split("|")) {
                 if (title.includes(keyword)) {
-                  item.parentNode.remove()
+                  item.parentNode.parentNode.parentNode.remove()
                   console.log("根据关键词", keyword, "已屏蔽等你来答问题", title)
                   break
                 }
