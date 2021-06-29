@@ -168,6 +168,7 @@ function reprint() {
   }
 }
 
+// feed item 的结构：顶层是 TopstoryItem，根据 item 类型不同分为：AnswerItem，ContentItem & ZVideoItem
 function blockFeedItem() {
   let block = e => {
     if (e.target.innerHTML) {
@@ -215,9 +216,15 @@ function blockFeedItem() {
             }
           }
         }
+      } else if (e.target.getElementsByClassName('ZVideoItem').length > 0) {
+        let item = e.target.getElementsByClassName('ZVideoItem')[0];
+        if (GM_getValue("menu_customBlockVideo")) {
+          item.parentNode.remove();
+          console.log("已屏蔽 1 条视频回答")
+        }
       }
     }
-  }
+  };
   document.addEventListener('DOMNodeInserted', block) // 监听插入事件
 }
 
@@ -231,9 +238,17 @@ function registerMenuCommand(title, gmKey, promptInfo) {
   });
 }
 
+function registerMenuCommandByConfirm(title, gmKey, promptInfo) {
+  GM_registerMenuCommand(title, function () {
+    let current = confirm(promptInfo);
+    GM_setValue(gmKey, current);
+  });
+}
+
 registerMenuCommand("自定义屏蔽标题关键词", 'menu_customBlockKeywords', "编辑 [自定义屏蔽标题关键词]\n（不同关键字之间使用 \"|\" 分隔，例如：关键字A|关键字B|关键字C ）")
 registerMenuCommand("自定义屏蔽用户", 'menu_customBlockUsers', "编辑 [自定义屏蔽用户]\n（不同关键字之间使用 \"|\" 分隔，例如：用户A|用户B|用户C ）");
 registerMenuCommand("自定义屏蔽等你来答", 'menu_customBlockQuestionKeywords', "编辑 [自定义屏蔽问题]\n（不同关键字之间使用 \"|\" 分隔，例如：问题A|问题B|问题C ）");
+registerMenuCommandByConfirm("是否要屏蔽视频", "menu_customBlockVideo", "点击 【取消】不会屏蔽视频，\n点击【确定】会屏蔽视频。");
 
 (function () {
   'use strict';
