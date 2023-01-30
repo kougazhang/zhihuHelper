@@ -56,6 +56,14 @@
     GM_addStyle('meta[itemprop="dateModified"]::after {content: "DateModified: " attr(content); color:#8590a6;}');
     /****************** Question page *********************************/
 
+    /****************** Search page ***********************************************/
+    // Hidden right bar
+    GM_addStyle(".css-knqde {display: none !important;}");
+    // Widen main bar
+    GM_addStyle(".Search-container { width: 1500px !important; } ");
+    GM_addStyle(".SearchMain { width: 1500px !important; } ");
+    /****************** Search page ***********************************************/
+
     /******************* Free copy**********************************************/
     var body = document.getElementsByTagName('body')[0];
     body.addEventListener('copy', function (e) {
