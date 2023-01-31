@@ -64,6 +64,11 @@
     GM_addStyle(".SearchMain { width: 1500px !important; } ");
     /****************** Search page ***********************************************/
 
+    /****************** Topic page ***********************************************/
+    // Widen main bar
+    GM_addStyle('div[data-za-detail-view-path-module="TopicItem"] { max-width: 1500px !important; } ');
+    /****************** Topic page ***********************************************/
+
     /******************* Free copy**********************************************/
     var body = document.getElementsByTagName('body')[0];
     body.addEventListener('copy', function (e) {
