@@ -69,6 +69,13 @@
     GM_addStyle('div[data-za-detail-view-path-module="TopicItem"] { max-width: 1500px !important; } ');
     /****************** Topic page ***********************************************/
 
+
+    /****************** Column page **********************************************************/
+    // Widen main bar
+    GM_addStyle('main[role="main"]>div>div:last-child {width: 1500px}');
+    GM_addStyle('main[role="main"]>div>div:last-child > div > div {width: 1500px}');
+    /****************** Column page **********************************************************/
+
     /******************* Free copy**********************************************/
     var body = document.getElementsByTagName('body')[0];
     body.addEventListener('copy', function (e) {

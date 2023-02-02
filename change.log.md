@@ -1,9 +1,8 @@
 ## v0.0.9 (developing)
 
-- [x] Widden the topic page
+- [x] 加宽 topic 页。
+- [x] 加宽专栏页。
 
 ## v0.0.8
 
-Refactoring the code. 
-
-Remove useless features.
+重构代码。
